@@ -1,0 +1,380 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600&display=swap');
+
+:root {
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --accent: #8b5cf6;
+  --accent-glow: rgba(139, 92, 246, 0.4);
+  --bg-dark: #020206;
+  --glass-bg: rgba(10, 10, 18, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-active: rgba(139, 92, 246, 0.4);
+  
+  --font-display: 'Orbitron', system-ui, sans-serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  
+  font-family: var(--font-body);
+  color-scheme: dark;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-dark);
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Base scroll indicator */
+.scroll-cue {
+  display: inline-block;
+  margin-top: 2rem;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-transform: uppercase;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Sections of the page */
+.hero-section, .footer-section {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  text-align: center;
+  padding: 2rem;
+  background: radial-gradient(circle at center, rgba(15, 12, 30, 0.8) 0%, var(--bg-dark) 100%);
+}
+
+.hero-section h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 0 0 1rem;
+  background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.3));
+}
+
+.hero-section p {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+/* Scrollytelling core container */
+.scrolly-container {
+  position: relative;
+  width: 100%;
+  background-color: var(--bg-dark);
+}
+
+/* Fixed viewport where visual canvas is rendered */
+.viewport-scene {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: #010103;
+}
+
+/* Space Background image wrapper */
+.space-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('./assets/space_background.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.75;
+  z-index: 1;
+}
+
+/* Starfield Overlay for depth */
+.starfield {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+    radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+    radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
+  background-size: 550px 550px, 350px 350px, 250px 250px;
+  background-position: 0 0, 40px 60px, 130px 270px;
+  opacity: 0.4;
+  z-index: 2;
+}
+
+/* The Voyager spacecraft container */
+.voyager-spacecraft {
+  position: absolute;
+  z-index: 10;
+  width: 320px;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 0 25px rgba(139, 92, 246, 0.4)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.2));
+  transform-origin: center center;
+}
+
+.voyager-spacecraft img {
+  width: 100%;
+  height: auto;
+}
+
+/* SVG Planets */
+.planet {
+  position: absolute;
+  border-radius: 50%;
+  z-index: 5;
+  transform-origin: center center;
+}
+
+/* Earth */
+.earth-planet {
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle at 30% 30%, #3b82f6 0%, #1e3a8a 50%, #030712 100%);
+  box-shadow: 0 0 40px rgba(59, 130, 246, 0.4), inset -10px -10px 30px rgba(0,0,0,0.8);
+}
+
+/* Jupiter */
+.jupiter-planet {
+  width: 300px;
+  height: 300px;
+  background: 
+    radial-gradient(circle at 30% 30%, transparent 20%, rgba(0,0,0,0.8) 80%),
+    repeating-linear-gradient(
+      0deg,
+      #b7791f 0px,
+      #d97706 15px,
+      #f59e0b 25px,
+      #d97706 40px,
+      #78350f 50px
+    );
+  box-shadow: 0 0 60px rgba(217, 119, 6, 0.35), inset -20px -20px 50px rgba(0,0,0,0.9);
+}
+
+/* Saturn */
+.saturn-planet-wrapper {
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.saturn-body {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fef08a 0%, #ca8a04 50%, #451a03 100%);
+  box-shadow: 0 0 50px rgba(202, 138, 4, 0.3), inset -10px -10px 30px rgba(0,0,0,0.8);
+  position: relative;
+  z-index: 2;
+}
+
+.saturn-rings {
+  position: absolute;
+  width: 320px;
+  height: 60px;
+  border: 18px solid rgba(202, 138, 4, 0.55);
+  border-radius: 50%;
+  transform: rotate(-15deg);
+  box-shadow: 0 0 30px rgba(202, 138, 4, 0.2);
+  z-index: 1;
+  pointer-events: none;
+  background: transparent;
+}
+
+/* Golden Record */
+.golden-record-container {
+  position: absolute;
+  z-index: 8;
+  width: 250px;
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.golden-record {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #fef08a 0%, #ca8a04 40%, #854d0e 80%, #451a03 100%);
+  box-shadow: 0 0 50px rgba(234, 179, 8, 0.5), inset 0 0 20px rgba(0,0,0,0.5);
+  border: 4px solid #fef08a;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.golden-record::after {
+  content: '';
+  position: absolute;
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+}
+
+.golden-record-center {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #fef08a;
+  box-shadow: 0 0 10px rgba(0,0,0,0.8);
+  border: 2px solid #ca8a04;
+}
+
+/* Text cards container overlay */
+.scrolly-stories {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  pointer-events: none; /* Let clicks pass through to standard links if any */
+}
+
+/* Story step that triggers the layout */
+.story-step {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 10%;
+}
+
+.story-step.align-left {
+  justify-content: flex-start;
+}
+
+.story-step.align-right {
+  justify-content: flex-end;
+}
+
+.story-step.align-center {
+  justify-content: center;
+}
+
+/* Glassmorphic card styling */
+.story-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 2.5rem;
+  max-width: 420px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  pointer-events: auto; /* enable interactions inside card */
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.story-card:hover {
+  border-color: var(--glass-border-active);
+  box-shadow: 0 20px 50px rgba(139, 92, 246, 0.25);
+}
+
+.story-card .year {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.story-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: #fff;
+  letter-spacing: 1px;
+}
+
+.story-card p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+/* Footer layout */
+.footer-section h2 {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #fff 40%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.restart-button {
+  font-family: var(--font-display);
+  background: transparent;
+  color: #fff;
+  border: 2px solid var(--accent);
+  padding: 1rem 2.5rem;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+.restart-button:hover {
+  background: var(--accent);
+  box-shadow: 0 0 35px var(--accent-glow);
+  transform: scale(1.05);
+}

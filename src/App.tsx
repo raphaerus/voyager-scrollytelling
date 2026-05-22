@@ -16,6 +16,14 @@ interface Keyframe extends ElementProperties {
 
 type KeyframesData = Record<string, Keyframe[]>;
 
+interface CardText {
+  year: string;
+  title: string;
+  description: string;
+}
+
+type CardsTextData = Record<string, CardText>;
+
 const defaultKeyframes: KeyframesData = {
   voyager: [
     { progress: 0, x: -20, y: 15, scale: 0.25, rotate: -25, opacity: 1 },
@@ -56,6 +64,41 @@ const defaultKeyframes: KeyframesData = {
     { progress: 92, x: 0, y: 0, scale: 0, rotate: 540, opacity: 0 },
     { progress: 100, x: 0, y: 0, scale: 0, rotate: 540, opacity: 0 }
   ]
+};
+
+const defaultCardsText: CardsTextData = {
+  launch: {
+    year: "1977",
+    title: "O Lançamento",
+    description: "A Voyager 1 é lançada ao espaço a bordo de um foguete Titan IIIE. Sua velocidade inicial supera qualquer veículo humano anterior, marcando o início de uma jornada eterna rumo ao desconhecido."
+  },
+  jupiter: {
+    year: "1979",
+    title: "Encontro com Júpiter",
+    description: "Aproximando-se do gigante gasoso, a Voyager 1 utiliza a gravidade de Júpiter como um \"estilingue espacial\", ganhando um impulso massivo de velocidade enquanto captura detalhes inéditos das tempestades jupiterianas."
+  },
+  saturn: {
+    year: "1980",
+    title: "Os Anéis de Saturno",
+    description: "A sonda voa bem perto de Saturno e Titan, revelando a complexidade espetacular de seus anéis de gelo e poeira. A gravidade do planeta redireciona a Voyager para fora do plano do sistema solar."
+  },
+  golden: {
+    year: "Mensagem Cósmica",
+    title: "O Disco de Ouro",
+    description: "Acoplado à sonda, está o Disco de Ouro, gravado com saudações em 55 idiomas, sons da Terra, músicas de várias culturas e imagens do nosso mundo — uma carta de apresentação para quem quer que encontre a sonda no futuro distante."
+  },
+  interstellar: {
+    year: "2012",
+    title: "Espaço Interestelar",
+    description: "Ao cruzar a heliopausa, a Voyager 1 deixa a bolha magnética do Sol para trás, tornando-se o primeiro objeto criado pela humanidade a adentrar o oceano silencioso do espaço interestelar."
+  }
+};
+
+const imagePresets = {
+  voyager: voyagerProbe,
+  shuttle: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Space_Shuttle_Atlantis_in_orbit.png/640px-Space_Shuttle_Atlantis_in_orbit.png',
+  ufo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Ufo_profile.png/640px-Ufo_profile.png',
+  hubble: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Hubble_Space_Telescope_in_orbit.png/640px-Hubble_Space_Telescope_in_orbit.png'
 };
 
 function interpolateProperty(keyframes: Keyframe[], progress: number): ElementProperties {
@@ -136,6 +179,12 @@ function App() {
   const [keyframes, setKeyframes] = useState<KeyframesData>(defaultKeyframes);
   const [copied, setCopied] = useState(false);
 
+  // New visual builder state
+  const [cardsText, setCardsText] = useState<CardsTextData>(defaultCardsText);
+  const [activeCardEdit, setActiveCardEdit] = useState<string>('launch');
+  const [probeImage, setProbeImage] = useState<string>(voyagerProbe);
+  const [customImageURL, setCustomImageURL] = useState<string>('');
+
   const [dragState, setDragState] = useState<{
     isDragging: boolean;
     startX: number;
@@ -144,7 +193,7 @@ function App() {
     startCoordY: number;
   } | null>(null);
 
-  // Smoothly lock body scroll when in sandbox mode
+  // Lock body scroll when in sandbox mode
   useEffect(() => {
     if (sandboxMode) {
       document.body.classList.add('sandbox-active');
@@ -216,7 +265,6 @@ function App() {
   };
 
   const deleteKeyframe = (progressToDelete: number) => {
-    // Keep at least boundary keyframes 0 and 100
     if (progressToDelete === 0 || progressToDelete === 100) return;
     setKeyframes(prev => {
       const list = prev[activeElement] || [];
@@ -233,6 +281,69 @@ function App() {
       ...prev,
       [activeElement]: defaultKeyframes[activeElement]
     }));
+  };
+
+  // Card Text Editing Handler
+  const handleCardTextChange = (field: keyof CardText, value: string) => {
+    setCardsText(prev => ({
+      ...prev,
+      [activeCardEdit]: {
+        ...prev[activeCardEdit],
+        [field]: value
+      }
+    }));
+  };
+
+  // Preset Selector Handler
+  const handleImagePresetChange = (presetKey: keyof typeof imagePresets | 'custom') => {
+    if (presetKey === 'custom') {
+      if (customImageURL) {
+        setProbeImage(customImageURL);
+      }
+    } else {
+      setProbeImage(imagePresets[presetKey]);
+    }
+  };
+
+  // Export narrative project to JSON
+  const exportProject = () => {
+    const projectData = {
+      version: "1.0.0",
+      keyframes,
+      cardsText,
+      probeImage
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", "projeto-voyager-storytelling.json");
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // Import narrative project from JSON
+  const handleImportProject = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (data.keyframes && data.cardsText) {
+          setKeyframes(data.keyframes);
+          setCardsText(data.cardsText);
+          if (data.probeImage) setProbeImage(data.probeImage);
+          alert("Projeto importado com sucesso!");
+        } else {
+          alert("Arquivo JSON inválido para projeto de storytelling!");
+        }
+      } catch (err) {
+        alert("Erro ao decodificar arquivo JSON!");
+      }
+    };
+    reader.readAsText(file);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -256,7 +367,6 @@ function App() {
       const dx = e.clientX - dragState.startX;
       const dy = e.clientY - dragState.startY;
       
-      // Calculate delta in viewport coordinates
       const dxVal = (dx / window.innerWidth) * 100;
       const dyVal = (dy / window.innerHeight) * 100;
       
@@ -278,7 +388,6 @@ function App() {
     };
   }, [dragState, sandboxProgress, activeElement]);
 
-  // Compute interpolated properties for the current progress
   const voyagerProps = interpolateProperty(keyframes.voyager, sandboxProgress);
   const earthProps = interpolateProperty(keyframes.earth, sandboxProgress);
   const jupiterProps = interpolateProperty(keyframes.jupiter, sandboxProgress);
@@ -293,7 +402,6 @@ function App() {
     golden: goldenProps
   }[activeElement];
 
-  // Generate code block
   const generateGSAPCode = () => {
     const list = keyframes[activeElement] || [];
     const sorted = [...list].sort((a, b) => a.progress - b.progress);
@@ -307,17 +415,15 @@ function App() {
     };
     
     const targetClass = targetMap[activeElement];
-    let code = `// Animação para ${activeElement.toUpperCase()}\n`;
+    let code = `// Configuração da animação para: ${targetClass}\n`;
     
     if (sorted.length < 2) {
-      return code + `// Adicione pelo menos 2 keyframes!`;
+      return code + `// Adicione mais keyframes!`;
     }
 
     for (let i = 0; i < sorted.length - 1; i++) {
       const k1 = sorted[i];
       const k2 = sorted[i + 1];
-      
-      // Check if values change
       const isHold = k1.x === k2.x && k1.y === k2.y && k1.scale === k2.scale && k1.rotate === k2.rotate && k1.opacity === k2.opacity;
       if (isHold) continue;
 
@@ -417,7 +523,7 @@ function App() {
             </div>
           </div>
 
-          {/* Voyager Spacecraft */}
+          {/* Voyager Spacecraft (Or custom asset) */}
           <div 
             className={`voyager-spacecraft ${activeElement === 'voyager' ? 'sandbox-draggable' : ''}`}
             style={{
@@ -427,48 +533,48 @@ function App() {
             }}
             onMouseDown={activeElement === 'voyager' ? handleMouseDown : undefined}
           >
-            <img src={voyagerProbe} alt="Sonda Voyager 1" />
+            <img src={probeImage} alt="Elemento Principal" />
           </div>
 
-          {/* Scrolling text cards overlay (interpolated visual) */}
+          {/* Scrolling text cards overlay (rendered from state) */}
           <div className="scrolly-stories" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 20, pointerEvents: 'none' }}>
             <div className="story-step align-left">
               <div className="story-card" id="card-launch" style={{ opacity: getCardOpacity('launch', sandboxProgress) }}>
-                <span className="year">1977</span>
-                <h2>O Lançamento</h2>
-                <p>A Voyager 1 é lançada ao espaço a bordo de um foguete Titan IIIE.</p>
+                <span className="year">{cardsText.launch.year}</span>
+                <h2>{cardsText.launch.title}</h2>
+                <p>{cardsText.launch.description}</p>
               </div>
             </div>
 
             <div className="story-step align-right">
               <div className="story-card" id="card-jupiter" style={{ opacity: getCardOpacity('jupiter', sandboxProgress) }}>
-                <span className="year">1979</span>
-                <h2>Encontro com Júpiter</h2>
-                <p>A Voyager 1 utiliza a gravidade de Júpiter como um "estilingue espacial".</p>
+                <span className="year">{cardsText.jupiter.year}</span>
+                <h2>{cardsText.jupiter.title}</h2>
+                <p>{cardsText.jupiter.description}</p>
               </div>
             </div>
 
             <div className="story-step align-left">
               <div className="story-card" id="card-saturn" style={{ opacity: getCardOpacity('saturn', sandboxProgress) }}>
-                <span className="year">1980</span>
-                <h2>Os Anéis de Saturno</h2>
-                <p>A sonda voa perto de Saturno, revelando a complexidade de seus anéis.</p>
+                <span className="year">{cardsText.saturn.year}</span>
+                <h2>{cardsText.saturn.title}</h2>
+                <p>{cardsText.saturn.description}</p>
               </div>
             </div>
 
             <div className="story-step align-right">
               <div className="story-card" id="card-golden" style={{ opacity: getCardOpacity('golden', sandboxProgress) }}>
-                <span className="year">Mensagem Cósmica</span>
-                <h2>O Disco de Ouro</h2>
-                <p>Acoplado à sonda, está o Disco de Ouro, gravado com saudações da Terra.</p>
+                <span className="year">{cardsText.golden.year}</span>
+                <h2>{cardsText.golden.title}</h2>
+                <p>{cardsText.golden.description}</p>
               </div>
             </div>
 
             <div className="story-step align-center">
               <div className="story-card" id="card-interstellar" style={{ opacity: getCardOpacity('interstellar', sandboxProgress) }}>
-                <span className="year">2012</span>
-                <h2>Espaço Interestelar</h2>
-                <p>A Voyager 1 entra no oceano silencioso do espaço interestelar.</p>
+                <span className="year">{cardsText.interstellar.year}</span>
+                <h2>{cardsText.interstellar.title}</h2>
+                <p>{cardsText.interstellar.description}</p>
               </div>
             </div>
           </div>
@@ -490,10 +596,11 @@ function App() {
 
           {/* Control Panel overlay */}
           <div className="visual-editor-panel">
-            <h3>Editor de Movimento</h3>
+            <h3>Editor de Storytelling</h3>
             
+            {/* Element Selection */}
             <div className="editor-section">
-              <span className="editor-section-title">1. Selecionar Elemento</span>
+              <span className="editor-section-title">1. Elemento Visível</span>
               <div className="element-select-grid">
                 {(['voyager', 'earth', 'jupiter', 'saturn', 'golden'] as const).map(el => (
                   <button 
@@ -501,18 +608,79 @@ function App() {
                     className={`element-select-btn ${activeElement === el ? 'active' : ''}`}
                     onClick={() => setActiveElement(el)}
                   >
-                    {el === 'voyager' ? "Voyager 🛰️" : el === 'earth' ? "Terra 🌍" : el === 'jupiter' ? "Júpiter 🪐" : el === 'saturn' ? "Saturno 🪐" : "Disco 📀"}
+                    {el === 'voyager' ? "Nave/Sonda 🛰️" : el === 'earth' ? "Terra 🌍" : el === 'jupiter' ? "Júpiter 🪐" : el === 'saturn' ? "Saturno 🪐" : "Disco 📀"}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="sandbox-drag-instructions">
-              🖱️ Clique e arraste o elemento diretamente na tela para posicionar!
+            {/* Custom Image / Library */}
+            <div className="editor-section">
+              <span className="editor-section-title">2. Biblioteca de Imagens</span>
+              <select 
+                className="editor-select"
+                onChange={(e) => handleImagePresetChange(e.target.value as any)}
+              >
+                <option value="voyager">Sonda Voyager 1 (Padrão)</option>
+                <option value="shuttle">Foguete/Ônibus Espacial Atlantis</option>
+                <option value="ufo">Disco Voador / UFO</option>
+                <option value="hubble">Telescópio Hubble</option>
+              </select>
+              <input 
+                type="text"
+                placeholder="Ou cole a URL de qualquer imagem..."
+                className="editor-input"
+                value={customImageURL}
+                onChange={(e) => setCustomImageURL(e.target.value)}
+              />
+              <button 
+                className="action-buttons button" 
+                style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', padding: '0.4rem', color: '#fff', borderRadius: '8px' }}
+                onClick={() => handleImagePresetChange('custom')}
+              >
+                Aplicar Imagem Personalizada
+              </button>
             </div>
 
+            {/* Editable Card Text section */}
             <div className="editor-section">
-              <span className="editor-section-title">2. Propriedades</span>
+              <span className="editor-section-title">3. Editor de Textos</span>
+              <select 
+                className="editor-select"
+                value={activeCardEdit}
+                onChange={(e) => setActiveCardEdit(e.target.value)}
+              >
+                <option value="launch">Fase 1: O Lançamento</option>
+                <option value="jupiter">Fase 2: Encontro com Júpiter</option>
+                <option value="saturn">Fase 3: Anéis de Saturno</option>
+                <option value="golden">Fase 4: O Disco de Ouro</option>
+                <option value="interstellar">Fase 5: Espaço Interestelar</option>
+              </select>
+              <input 
+                type="text"
+                placeholder="Ano/Fase (ex: 1977)"
+                className="editor-input"
+                value={cardsText[activeCardEdit].year}
+                onChange={(e) => handleCardTextChange('year', e.target.value)}
+              />
+              <input 
+                type="text"
+                placeholder="Título do Cartão"
+                className="editor-input"
+                value={cardsText[activeCardEdit].title}
+                onChange={(e) => handleCardTextChange('title', e.target.value)}
+              />
+              <textarea 
+                placeholder="História a ser contada..."
+                className="editor-textarea"
+                value={cardsText[activeCardEdit].description}
+                onChange={(e) => handleCardTextChange('description', e.target.value)}
+              />
+            </div>
+
+            {/* Element Parameters Sliders */}
+            <div className="editor-section">
+              <span className="editor-section-title">4. Parâmetros de Movimento</span>
               <div className="editor-row">
                 <label>Posição X</label>
                 <input 
@@ -575,8 +743,9 @@ function App() {
               </div>
             </div>
 
+            {/* Keyframes timeline management */}
             <div className="editor-section">
-              <span className="editor-section-title">3. Keyframes ({keyframes[activeElement]?.length || 0})</span>
+              <span className="editor-section-title">5. Keyframes ({keyframes[activeElement]?.length || 0})</span>
               <div className="keyframes-list">
                 {keyframes[activeElement]?.map(kf => (
                   <span 
@@ -616,17 +785,27 @@ function App() {
               </div>
             </div>
 
-            <div className="code-output-container">
-              <span className="editor-section-title">4. Código GSAP Gerado</span>
-              <pre className="code-output">{generateGSAPCode()}</pre>
-              <button className="copy-btn" onClick={handleCopyCode}>
-                {copied ? "Copiado! ✓" : "Copiar Configuração"}
-              </button>
+            {/* Code Generator & Project JSON exporter */}
+            <div className="editor-section" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+              <span className="editor-section-title">6. Exportar / Salvar</span>
+              <div className="action-buttons" style={{ marginBottom: '0.5rem' }}>
+                <button className="primary" onClick={exportProject}>Salvar Projeto</button>
+                <label className="file-import-btn">
+                  Abrir Projeto
+                  <input type="file" accept=".json" onChange={handleImportProject} />
+                </label>
+              </div>
+              <div className="code-output-container">
+                <pre className="code-output">{generateGSAPCode()}</pre>
+                <button className="copy-btn" onClick={handleCopyCode}>
+                  {copied ? "Copiado! ✓" : "Copiar Configuração"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       ) : (
-        /* RENDER MODE B: STANDARD SCROLLYTELLING PAGE */
+        /* RENDER MODE B: STANDARD SCROLLYTELLING PAGE (REFLECTS EDITED DATA) */
         <>
           {/* 1. WELCOME HERO SECTION */}
           <section className="hero-section">
@@ -667,75 +846,55 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Voyager Spacecraft */}
+                  {/* Voyager Spacecraft (Or custom asset) */}
                   <div className="voyager-spacecraft">
-                    <img src={voyagerProbe} alt="Sonda Voyager 1" />
+                    <img src={probeImage} alt="Sonda Voyager 1" />
                   </div>
 
-                  {/* Scrolling text cards overlay (sticky-pinned) */}
+                  {/* Scrolling text cards overlay (reflecting cardsText state) */}
                   <div className="scrolly-stories" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 20, pointerEvents: 'none' }}>
                     {/* Step 1: Launch */}
                     <div className="story-step align-left">
                       <div className="story-card" id="card-launch" style={{ opacity: 0 }}>
-                        <span className="year">1977</span>
-                        <h2>O Lançamento</h2>
-                        <p>
-                          A Voyager 1 é lançada ao espaço a bordo de um foguete Titan IIIE. 
-                          Sua velocidade inicial supera qualquer veículo humano anterior, 
-                          marcando o início de uma jornada eterna rumo ao desconhecido.
-                        </p>
+                        <span className="year">{cardsText.launch.year}</span>
+                        <h2>{cardsText.launch.title}</h2>
+                        <p>{cardsText.launch.description}</p>
                       </div>
                     </div>
 
                     {/* Step 2: Jupiter */}
                     <div className="story-step align-right">
                       <div className="story-card" id="card-jupiter" style={{ opacity: 0 }}>
-                        <span className="year">1979</span>
-                        <h2>Encontro com Júpiter</h2>
-                        <p>
-                          Aproximando-se do gigante gasoso, a Voyager 1 utiliza a gravidade 
-                          de Júpiter como um "estilingue espacial", ganhando um impulso massivo 
-                          de velocidade enquanto captura detalhes inéditos das tempestades jupiterianas.
-                        </p>
+                        <span className="year">{cardsText.jupiter.year}</span>
+                        <h2>{cardsText.jupiter.title}</h2>
+                        <p>{cardsText.jupiter.description}</p>
                       </div>
                     </div>
 
                     {/* Step 3: Saturn */}
                     <div className="story-step align-left">
                       <div className="story-card" id="card-saturn" style={{ opacity: 0 }}>
-                        <span className="year">1980</span>
-                        <h2>Os Anéis de Saturno</h2>
-                        <p>
-                          A sonda voa bem perto de Saturno e Titan, revelando a complexidade 
-                          espetacular de seus anéis de gelo e poeira. A gravidade do planeta 
-                          redireciona a Voyager para fora do plano do sistema solar.
-                        </p>
+                        <span className="year">{cardsText.saturn.year}</span>
+                        <h2>{cardsText.saturn.title}</h2>
+                        <p>{cardsText.saturn.description}</p>
                       </div>
                     </div>
 
                     {/* Step 4: Golden Record */}
                     <div className="story-step align-right">
                       <div className="story-card" id="card-golden" style={{ opacity: 0 }}>
-                        <span className="year">Mensagem Cósmica</span>
-                        <h2>O Disco de Ouro</h2>
-                        <p>
-                          Acoplado à sonda, está o Disco de Ouro, gravado com saudações em 55 idiomas, 
-                          sons da Terra, músicas de várias culturas e imagens do nosso mundo — uma 
-                          carta de apresentação para quem quer que encontre a sonda no futuro distante.
-                        </p>
+                        <span className="year">{cardsText.golden.year}</span>
+                        <h2>{cardsText.golden.title}</h2>
+                        <p>{cardsText.golden.description}</p>
                       </div>
                     </div>
 
                     {/* Step 5: Interstellar Space */}
                     <div className="story-step align-center">
                       <div className="story-card" id="card-interstellar" style={{ opacity: 0 }}>
-                        <span className="year">2012</span>
-                        <h2>Espaço Interestelar</h2>
-                        <p>
-                          Ao cruzar a heliopausa, a Voyager 1 deixa a bolha magnética do Sol para trás, 
-                          tornando-se o primeiro objeto criado pela humanidade a adentrar o oceano silencioso 
-                          do espaço interestelar.
-                        </p>
+                        <span className="year">{cardsText.interstellar.year}</span>
+                        <h2>{cardsText.interstellar.title}</h2>
+                        <p>{cardsText.interstellar.description}</p>
                       </div>
                     </div>
                   </div>
@@ -745,14 +904,12 @@ function App() {
               {/* Declarative Scroll Animations for Visual Elements */}
               <Animation
                 tween={[
-                  // Space Background Animation (Subtle Zoom & Pan)
                   {
                     target: '.space-background',
                     start: 0,
                     end: 100,
                     to: { scale: 1.3, x: '-5%', y: '-3%', ease: 'none' }
                   },
-                  // Earth Animation (Fades out and moves left)
                   {
                     target: '.earth-planet',
                     start: 0,
@@ -762,7 +919,6 @@ function App() {
                       { scale: 0.1, opacity: 0, x: '-40vw', y: '5vh', ease: 'power1.inOut' }
                     ]
                   },
-                  // Jupiter Animation (Flyby: enters from right, zooms in, exits left)
                   {
                     target: '.jupiter-planet',
                     start: 12,
@@ -778,7 +934,6 @@ function App() {
                     end: 50,
                     to: { scale: 0.1, opacity: 0, x: '-50vw', y: '20vh', ease: 'power1.in' }
                   },
-                  // Saturn Animation (Flyby: enters from lower left, tilts, exits upper right)
                   {
                     target: '.saturn-planet-wrapper',
                     start: 40,
@@ -794,7 +949,6 @@ function App() {
                     end: 78,
                     to: { scale: 0.1, opacity: 0, x: '50vw', y: '-30vh', rotate: -30, ease: 'power1.in' }
                   },
-                  // Golden Record Animation (Spinning showcase in center)
                   {
                     target: '.golden-record-container',
                     start: 68,
@@ -810,8 +964,7 @@ function App() {
                     end: 92,
                     to: { scale: 0, opacity: 0, rotate: 540, ease: 'power2.in' }
                   },
-                  // Voyager Spacecraft Complex Trajectory
-                  // Phase 1: Leaving Earth
+                  // Voyager trajectory
                   {
                     target: '.voyager-spacecraft',
                     start: 0,
@@ -821,35 +974,30 @@ function App() {
                       { scale: 0.55, rotate: 10, x: '0vw', y: '0vh', ease: 'power1.out' }
                     ]
                   },
-                  // Phase 2: Jupiter swing-by (gravity assist acceleration)
                   {
                     target: '.voyager-spacecraft',
                     start: 20,
                     end: 38,
                     to: { scale: 1.1, rotate: -40, x: '25vw', y: '-15vh', ease: 'power2.inOut' }
                   },
-                  // Phase 3: Cruising to Saturn
                   {
                     target: '.voyager-spacecraft',
                     start: 38,
                     end: 45,
                     to: { scale: 0.6, rotate: 15, x: '-30vw', y: '20vh', ease: 'power1.inOut' }
                   },
-                  // Phase 4: Saturn flyby
                   {
                     target: '.voyager-spacecraft',
                     start: 48,
                     end: 65,
                     to: { scale: 0.9, rotate: -60, x: '5vw', y: '-10vh', ease: 'power2.out' }
                   },
-                  // Phase 5: Approaching Interstellar, moving aside for Golden Record
                   {
                     target: '.voyager-spacecraft',
                     start: 68,
                     end: 82,
                     to: { scale: 0.4, rotate: 20, x: '32vw', y: '22vh', opacity: 0.5, ease: 'power1.inOut' }
                   },
-                  // Phase 6: Deep interstellar space
                   {
                     target: '.voyager-spacecraft',
                     start: 85,
